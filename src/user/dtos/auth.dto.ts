@@ -1,34 +1,57 @@
-import { UserType } from '@prisma/client';
-import z from 'zod';
-import { createZodDto } from '@anatine/zod-nestjs';
+import {
+  IsString,
+  Matches,
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsOptional,
+  MinLength,
+} from 'class-validator';
 
-const signUpDtoSchema = z.object({
-  name: z.string().min(1),
-  phone: z
-    .string()
-    .regex(
-      /^(\+\d{1,2}\s)?\d{1,3}[\s.-]\d{3,5}\d{4}$/,
-      'phone must be a valid phone number',
-    ),
-  email: z.string().email(),
-  password: z
-    .string()
-    .min(8)
-    .regex(/^(?=.*[0-9])/, 'password must contain at least 1 number'),
-  productKey: z.string().min(1).optional(),
-});
-export class SignUpDto extends createZodDto(signUpDtoSchema) {}
+export class SignUpDto {
+  @IsString()
+  @IsNotEmpty()
+  name: string;
 
-const signInDtoSchema = z.object({
-  email: z.string().email(),
-  password: z.string().min(1),
-});
-export class SignInDto extends createZodDto(signInDtoSchema) {}
+  @Matches(/^(\+\d{1,2}\s)?\d{1,3}[\s.-]\d{3,5}\d{4}$/, {
+    message: 'phone must be a valid phone number',
+  })
+  phone: string;
 
-const generateProductKeyDtoSchema = z.object({
-  email: z.string().email(),
-  userType: z.enum([UserType.admin, UserType.realtor]),
-});
-export class GenerateProductKeyDto extends createZodDto(
-  generateProductKeyDtoSchema,
-) {}
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @MinLength(8)
+  @Matches(/^(?=.*[0-9])/, {
+    message: 'password must contain at least 1 number',
+  })
+  password: string;
+
+  @IsOptional()
+  @IsString()
+  @IsNotEmpty()
+  productKey: string;
+}
+
+export class SignInDto {
+  @IsEmail()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+}
+
+enum UserType {
+  admin = 'admin',
+  realtor = 'realtor',
+}
+
+export class GenerateProductKeyDto {
+  @IsEmail()
+  email: string;
+
+  @IsEnum(UserType, { message: 'userType should be admin or realtor' })
+  userType: UserType;
+}

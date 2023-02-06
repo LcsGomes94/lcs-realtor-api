@@ -12,20 +12,45 @@ export class HomeService {
   constructor(private readonly prismaClient: PrismaService) {}
 
   async getAllHomes(queryFilter: QueryDto): Promise<HomeResponseDto[]> {
+    enum Mode {
+      default = 'default',
+      insensitive = 'insensitive',
+    }
+
+    const city = {
+      ...(queryFilter.city && {
+        contains: queryFilter.city,
+        mode: Mode.insensitive,
+      }),
+    };
+
+    const price = {
+      ...(queryFilter.minPrice && { gte: queryFilter.minPrice }),
+      ...(queryFilter.maxPrice && { lte: queryFilter.maxPrice }),
+    };
+
+    const filter = {
+      city,
+      price,
+      ...(queryFilter.propertyType && {
+        property_type: queryFilter.propertyType,
+      }),
+    };
+
     const homes = await this.prismaClient.home.findMany({
       include: {
         images: {
           select: { url: true },
         },
       },
-      where: queryFilter,
+      where: filter,
     });
 
     if (!homes.length) {
       throw new NotFoundException();
     }
 
-    return homes.map((home) => HomeResponseDto.zodSchema.parse(home));
+    return homes.map((home) => new HomeResponseDto(home));
   }
 
   async getHomeById(id: number): Promise<HomeResponseDto> {
@@ -42,40 +67,53 @@ export class HomeService {
       },
     });
 
-    return HomeResponseDto.zodSchema.parse(home);
+    if (!home) {
+      throw new NotFoundException();
+    }
+
+    return new HomeResponseDto(home);
   }
 
   async createHome({
     adress,
     city,
-    land_size,
-    number_of_bathrooms,
-    number_of_bedrooms,
     price,
-    property_type,
-    realtor_id,
+    numberOfBedrooms,
+    numberOfBathrooms,
+    landSize,
+    propertyType,
+    realtorId,
+    images,
   }: CreateHomeDto): Promise<HomeResponseDto> {
     const home = await this.prismaClient.home.create({
       data: {
         adress,
         city,
-        land_size,
-        number_of_bathrooms,
-        number_of_bedrooms,
         price,
-        property_type,
-        realtor_id,
+        land_size: landSize,
+        number_of_bedrooms: numberOfBedrooms,
+        number_of_bathrooms: numberOfBathrooms,
+        property_type: propertyType,
+        realtor_id: realtorId,
       },
-      select: {
-        id: true,
-        adress: true,
-        city: true,
-        price: true,
-        number_of_bedrooms: true,
-        number_of_bathrooms: true,
-        created_at: true,
-        land_size: true,
-        property_type: true,
+    });
+
+    const homeImages = images.map((image) => {
+      return {
+        ...image,
+        home_id: home.id,
+      };
+    });
+
+    await this.prismaClient.image.createMany({
+      data: homeImages,
+    });
+
+    const updatedHome = await this.prismaClient.home.findUnique({
+      where: {
+        id: home.id,
+      },
+      include: {
         images: {
           select: {
             url: true,
@@ -84,7 +122,7 @@ export class HomeService {
       },
     });
 
-    return HomeResponseDto.zodSchema.parse(home);
+    return new HomeResponseDto(updatedHome);
   }
 
   async updateHome(id: number, body: UpdateHomeDto): Promise<HomeResponseDto> {
@@ -92,19 +130,35 @@ export class HomeService {
       const home = await this.prismaClient.home.update({
         where: { id },
         data: {
-          ...body,
+          ...(body.adress && { adress: body.adress }),
+          ...(body.city && { city: body.city }),
+          ...(body.price && { price: body.price }),
+          ...(body.numberOfBedrooms && {
+            number_of_bedrooms: body.numberOfBedrooms,
+          }),
+          ...(body.numberOfBathrooms && {
+            number_of_bathrooms: body.numberOfBathrooms,
+          }),
+          ...(body.landSize && { land_size: body.landSize }),
+          ...(body.propertyType && { property_type: body.propertyType }),
         },
       });
 
-      return HomeResponseDto.zodSchema.parse(home);
+      return new HomeResponseDto(home);
     } catch (error) {
       throw new NotFoundException();
     }
   }
 
-  deleteHome(id: number) {
+  async deleteHome(id: number) {
     try {
-      this.prismaClient.home.delete({
+      await this.prismaClient.image.deleteMany({
+        where: {
+          home_id: id,
+        },
+      });
+
+      await this.prismaClient.home.delete({
         where: {
           id,
         },
