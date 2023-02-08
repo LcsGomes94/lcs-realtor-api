@@ -1,6 +1,11 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import {
+  Injectable,
+  NotFoundException,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import {
+  AuthorizedUserDto,
   CreateHomeDto,
   HomeResponseDto,
   QueryDto,
@@ -113,42 +118,56 @@ export class HomeService {
     return new HomeResponseDto(home);
   }
 
-  async updateHome(id: number, body: UpdateHomeDto): Promise<HomeResponseDto> {
-    try {
-      const home = await this.prismaClient.home.update({
-        where: { id },
-        data: {
-          ...(body.adress && { adress: body.adress }),
-          ...(body.city && { city: body.city }),
-          ...(body.price && { price: body.price }),
-          ...(body.numberOfBedrooms && {
-            number_of_bedrooms: body.numberOfBedrooms,
-          }),
-          ...(body.numberOfBathrooms && {
-            number_of_bathrooms: body.numberOfBathrooms,
-          }),
-          ...(body.landSize && { land_size: body.landSize }),
-          ...(body.propertyType && { property_type: body.propertyType }),
-        },
-      });
+  async updateHome(
+    id: number,
+    body: UpdateHomeDto,
+    user: AuthorizedUserDto,
+  ): Promise<HomeResponseDto> {
+    await this.CheckAuthorization(id, user);
 
-      return new HomeResponseDto(home);
-    } catch (error) {
-      throw new NotFoundException();
-    }
+    const newHome = await this.prismaClient.home.update({
+      where: { id },
+      data: {
+        ...(body.adress && { adress: body.adress }),
+        ...(body.city && { city: body.city }),
+        ...(body.price && { price: body.price }),
+        ...(body.numberOfBedrooms && {
+          number_of_bedrooms: body.numberOfBedrooms,
+        }),
+        ...(body.numberOfBathrooms && {
+          number_of_bathrooms: body.numberOfBathrooms,
+        }),
+        ...(body.landSize && { land_size: body.landSize }),
+        ...(body.propertyType && { property_type: body.propertyType }),
+      },
+    });
+
+    return new HomeResponseDto(newHome);
   }
 
-  async deleteHome(id: number) {
-    try {
-      await this.prismaClient.home.delete({
-        where: {
-          id,
-        },
-      });
+  async deleteHome(id: number, user: AuthorizedUserDto) {
+    await this.CheckAuthorization(id, user);
 
-      return;
-    } catch (error) {
+    await this.prismaClient.home.delete({
+      where: {
+        id,
+      },
+    });
+
+    return;
+  }
+
+  async CheckAuthorization(id: number, user: AuthorizedUserDto) {
+    const home = await this.prismaClient.home.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!home) {
       throw new NotFoundException();
+    } else if (user.userId !== home.realtor_id && user.userType !== 'admin') {
+      throw new UnauthorizedException();
     }
   }
 }

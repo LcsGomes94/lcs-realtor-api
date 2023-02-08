@@ -11,6 +11,7 @@ import {
   IsPositive,
   IsUrl,
   ArrayNotEmpty,
+  IsDateString,
 } from 'class-validator';
 
 class Image {
@@ -160,16 +161,41 @@ export class QueryDto {
   propertyType?: PropertyType;
 }
 
-enum CreateHomeUser {
+enum AuthorizedUser {
   admin = 'admin',
   realtor = 'realtor',
 }
 
-export class CreateHomeUserDto {
+export class AuthorizedUserDto {
   @IsNumber()
   @IsPositive()
   userId: number;
 
-  @IsEnum(CreateHomeUser)
-  userType: CreateHomeUser;
+  @IsEnum(AuthorizedUser)
+  userType: AuthorizedUser;
+}
+
+export class UserDto {
+  @IsString()
+  @IsNotEmpty()
+  iss: string;
+
+  @IsString()
+  @IsNotEmpty()
+  aud: string;
+
+  @IsNumber()
+  @IsPositive()
+  userId: number;
+
+  @IsEnum(UserType)
+  userType: UserType;
+
+  @IsNumber()
+  @IsPositive()
+  iat: number;
+
+  @IsNumber()
+  @IsPositive()
+  exp: number;
 }

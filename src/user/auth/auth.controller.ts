@@ -1,4 +1,4 @@
-import { Body, Controller, Post } from '@nestjs/common';
+import { Body, Controller, Post, Get } from '@nestjs/common';
 import { Param } from '@nestjs/common/decorators';
 import { GenerateProductKeyDto, SignInDto, SignUpDto } from '../dtos/auth.dto';
 import { AuthService } from './auth.service';
@@ -6,6 +6,8 @@ import { UserType } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 import { ParseEnumPipe } from '@nestjs/common/pipes';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
+import { User } from '../decorators.ts/user.decorator';
+import { UserDto } from 'src/home/dtos/home.dto';
 
 @Controller('auth')
 export class AuthController {
@@ -46,5 +48,10 @@ export class AuthController {
   @Post('key')
   generateProductKey(@Body() body: GenerateProductKeyDto) {
     return this.authService.generateProducKey(body);
+  }
+
+  @Get('me')
+  me(@User() user: UserDto) {
+    return user;
   }
 }

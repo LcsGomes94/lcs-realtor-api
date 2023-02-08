@@ -16,7 +16,7 @@ import {
   HomeResponseDto,
   QueryDto,
   UpdateHomeDto,
-  CreateHomeUserDto,
+  AuthorizedUserDto,
 } from './dtos/home.dto';
 import { HomeService } from './home.service';
 
@@ -37,7 +37,7 @@ export class HomeController {
   @Post()
   createHome(
     @Body() body: CreateHomeDto,
-    @User() user: CreateHomeUserDto,
+    @User() user: AuthorizedUserDto,
   ): Promise<HomeResponseDto> {
     return this.homeService.createHome(body, user.userId);
   }
@@ -46,13 +46,17 @@ export class HomeController {
   updateHome(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateHomeDto,
+    @User() user: AuthorizedUserDto,
   ): Promise<HomeResponseDto> {
-    return this.homeService.updateHome(id, body);
+    return this.homeService.updateHome(id, body, user);
   }
 
   @HttpCode(204)
   @Delete(':id')
-  deleteHome(@Param('id', ParseIntPipe) id: number) {
-    return this.homeService.deleteHome(id);
+  deleteHome(
+    @Param('id', ParseIntPipe) id: number,
+    @User() user: AuthorizedUserDto,
+  ) {
+    return this.homeService.deleteHome(id, user);
   }
 }
