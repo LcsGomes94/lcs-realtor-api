@@ -54,7 +54,7 @@ export class HomeService {
   }
 
   async getHomeById(id: number): Promise<HomeResponseDto> {
-    const home = await this.prismaClient.home.findFirst({
+    const home = await this.prismaClient.home.findUnique({
       where: {
         id,
       },
@@ -74,17 +74,19 @@ export class HomeService {
     return new HomeResponseDto(home);
   }
 
-  async createHome({
-    adress,
-    city,
-    price,
-    numberOfBedrooms,
-    numberOfBathrooms,
-    landSize,
-    propertyType,
-    realtorId,
-    images,
-  }: CreateHomeDto): Promise<HomeResponseDto> {
+  async createHome(
+    {
+      adress,
+      city,
+      price,
+      numberOfBedrooms,
+      numberOfBathrooms,
+      landSize,
+      propertyType,
+      images,
+    }: CreateHomeDto,
+    userId: number,
+  ): Promise<HomeResponseDto> {
     const home = await this.prismaClient.home.create({
       data: {
         adress,
@@ -94,24 +96,10 @@ export class HomeService {
         number_of_bedrooms: numberOfBedrooms,
         number_of_bathrooms: numberOfBathrooms,
         property_type: propertyType,
-        realtor_id: realtorId,
-      },
-    });
-
-    const homeImages = images.map((image) => {
-      return {
-        ...image,
-        home_id: home.id,
-      };
-    });
-
-    await this.prismaClient.image.createMany({
-      data: homeImages,
-    });
-
-    const updatedHome = await this.prismaClient.home.findUnique({
-      where: {
-        id: home.id,
+        realtor_id: userId,
+        images: {
+          createMany: { data: images },
+        },
       },
       include: {
         images: {
@@ -122,7 +110,7 @@ export class HomeService {
       },
     });
 
-    return new HomeResponseDto(updatedHome);
+    return new HomeResponseDto(home);
   }
 
   async updateHome(id: number, body: UpdateHomeDto): Promise<HomeResponseDto> {
@@ -152,12 +140,6 @@ export class HomeService {
 
   async deleteHome(id: number) {
     try {
-      await this.prismaClient.image.deleteMany({
-        where: {
-          home_id: id,
-        },
-      });
-
       await this.prismaClient.home.delete({
         where: {
           id,

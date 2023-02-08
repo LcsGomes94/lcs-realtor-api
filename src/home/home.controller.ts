@@ -10,11 +10,13 @@ import {
   Query,
 } from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common/pipes';
+import { User } from 'src/user/decorators.ts/user.decorator';
 import {
   CreateHomeDto,
   HomeResponseDto,
   QueryDto,
   UpdateHomeDto,
+  CreateHomeUserDto,
 } from './dtos/home.dto';
 import { HomeService } from './home.service';
 
@@ -33,8 +35,11 @@ export class HomeController {
   }
 
   @Post()
-  createHome(@Body() body: CreateHomeDto): Promise<HomeResponseDto> {
-    return this.homeService.createHome(body);
+  createHome(
+    @Body() body: CreateHomeDto,
+    @User() user: CreateHomeUserDto,
+  ): Promise<HomeResponseDto> {
+    return this.homeService.createHome(body, user.userId);
   }
 
   @Put(':id')

@@ -24,10 +24,10 @@ export class AuthController {
       try {
         const payload = jwt.verify(
           body.productKey,
-          process.env.SIGNUP_TOKEN_KEY,
-        ) as jwt.VerifyOptions & { sub: string; userType: UserType };
+          process.env.PRODUCT_TOKEN_KEY,
+        ) as jwt.VerifyOptions & { userEmail: string; userType: UserType };
 
-        if (payload.userType !== userType || payload.sub !== body.email) {
+        if (payload.userType !== userType || payload.userEmail !== body.email) {
           throw new UnauthorizedException();
         }
       } catch (error) {

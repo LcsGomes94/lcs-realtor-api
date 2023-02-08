@@ -1,4 +1,4 @@
-import { PropertyType } from '@prisma/client';
+import { PropertyType, UserType } from '@prisma/client';
 import { Exclude } from 'class-transformer';
 import { Expose, Type } from 'class-transformer';
 import {
@@ -95,10 +95,6 @@ export class CreateHomeDto {
   @IsEnum(PropertyType)
   propertyType: PropertyType;
 
-  @IsNumber()
-  @IsPositive()
-  realtorId: number;
-
   @ArrayNotEmpty()
   @ValidateNested()
   @Type(() => Image)
@@ -162,4 +158,18 @@ export class QueryDto {
     message: 'propertyType should be residential or condo',
   })
   propertyType?: PropertyType;
+}
+
+enum CreateHomeUser {
+  admin = 'admin',
+  realtor = 'realtor',
+}
+
+export class CreateHomeUserDto {
+  @IsNumber()
+  @IsPositive()
+  userId: number;
+
+  @IsEnum(CreateHomeUser)
+  userType: CreateHomeUser;
 }

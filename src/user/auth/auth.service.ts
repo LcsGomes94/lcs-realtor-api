@@ -35,7 +35,7 @@ export class AuthService {
       },
     });
 
-    return this.generateSessionJwt(user.name, user.id);
+    return this.generateSessionJwt(user.user_type, user.id);
   }
 
   async signIn({ email, password }: SignInDto) {
@@ -55,7 +55,7 @@ export class AuthService {
       throw new HttpException('invalid credentials', 400);
     }
 
-    return this.generateSessionJwt(user.name, user.id);
+    return this.generateSessionJwt(user.user_type, user.id);
   }
 
   generateProducKey({ email: userEmail, userType }: GenerateProductKeyDto) {
@@ -63,23 +63,23 @@ export class AuthService {
       {
         iss: 'RealtorApp',
         aud: 'signup',
-        sub: userEmail,
+        userEmail,
         userType,
       },
-      process.env.SIGNUP_TOKEN_KEY,
+      process.env.PRODUCT_TOKEN_KEY,
       {
         expiresIn: '3d',
       },
     );
   }
 
-  private generateSessionJwt(userName: string, userId: number) {
+  private generateSessionJwt(userType: UserType, userId: number) {
     return jwt.sign(
       {
         iss: 'RealtorApp',
         aud: 'signin',
-        sub: userName,
-        userId,
+        userId: userId,
+        userType,
       },
       process.env.SIGNIN_TOKEN_KEY,
       {

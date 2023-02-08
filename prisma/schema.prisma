@@ -51,7 +51,7 @@ model Home {
   updated_at          DateTime     @updatedAt
   images              Image[]
   realtor_id          Int
-  realtor             User         @relation(fields: [realtor_id], references: [id])
+  realtor             User         @relation(fields: [realtor_id], references: [id], onDelete: Cascade)
   messages            Message[]
 
   @@map("homes")
@@ -63,7 +63,7 @@ model Image {
   created_at DateTime @default(now())
   updated_at DateTime @updatedAt
   home_id    Int
-  home       Home     @relation(fields: [home_id], references: [id])
+  home       Home     @relation(fields: [home_id], references: [id], onDelete: Cascade)
 
   @@map("images")
 }
@@ -72,11 +72,11 @@ model Message {
   id         Int    @id @default(autoincrement())
   message    String
   home_id    Int
-  home       Home   @relation(fields: [home_id], references: [id])
+  home       Home   @relation(fields: [home_id], references: [id], onDelete: Cascade)
   realtor_id Int
-  realtor    User   @relation("realtor_message", fields: [realtor_id], references: [id])
+  realtor    User   @relation("realtor_message", fields: [realtor_id], references: [id], onDelete: Cascade)
   buyer_id   Int
-  buyer      User   @relation("buyer_message", fields: [buyer_id], references: [id])
+  buyer      User   @relation("buyer_message", fields: [buyer_id], references: [id], onDelete: Cascade)
 
   @@map("messages")
 }
