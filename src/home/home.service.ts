@@ -4,8 +4,8 @@ import {
   UnauthorizedException,
 } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { UserDto } from 'src/user/dtos/auth.dto';
 import {
-  AuthorizedUserDto,
   CreateHomeDto,
   HomeResponseDto,
   QueryDto,
@@ -15,6 +15,20 @@ import {
 @Injectable()
 export class HomeService {
   constructor(private readonly prismaClient: PrismaService) {}
+
+  async CheckAuthorization(id: number, user: UserDto) {
+    const home = await this.prismaClient.home.findUnique({
+      where: {
+        id,
+      },
+    });
+
+    if (!home) {
+      throw new NotFoundException();
+    } else if (user.userId !== home.realtor_id && user.userType !== 'admin') {
+      throw new UnauthorizedException();
+    }
+  }
 
   async getAllHomes(queryFilter: QueryDto): Promise<HomeResponseDto[]> {
     enum Mode {
@@ -121,7 +135,7 @@ export class HomeService {
   async updateHome(
     id: number,
     body: UpdateHomeDto,
-    user: AuthorizedUserDto,
+    user: UserDto,
   ): Promise<HomeResponseDto> {
     await this.CheckAuthorization(id, user);
 
@@ -145,7 +159,7 @@ export class HomeService {
     return new HomeResponseDto(newHome);
   }
 
-  async deleteHome(id: number, user: AuthorizedUserDto) {
+  async deleteHome(id: number, user: UserDto) {
     await this.CheckAuthorization(id, user);
 
     await this.prismaClient.home.delete({
@@ -155,19 +169,5 @@ export class HomeService {
     });
 
     return;
-  }
-
-  async CheckAuthorization(id: number, user: AuthorizedUserDto) {
-    const home = await this.prismaClient.home.findUnique({
-      where: {
-        id,
-      },
-    });
-
-    if (!home) {
-      throw new NotFoundException();
-    } else if (user.userId !== home.realtor_id && user.userType !== 'admin') {
-      throw new UnauthorizedException();
-    }
   }
 }

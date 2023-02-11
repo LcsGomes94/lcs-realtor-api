@@ -11,12 +11,12 @@ import {
 } from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common/pipes';
 import { User } from 'src/user/decorators.ts/user.decorator';
+import { UserDto } from 'src/user/dtos/auth.dto';
 import {
   CreateHomeDto,
   HomeResponseDto,
   QueryDto,
   UpdateHomeDto,
-  AuthorizedUserDto,
 } from './dtos/home.dto';
 import { HomeService } from './home.service';
 
@@ -37,7 +37,7 @@ export class HomeController {
   @Post()
   createHome(
     @Body() body: CreateHomeDto,
-    @User() user: AuthorizedUserDto,
+    @User() user: UserDto,
   ): Promise<HomeResponseDto> {
     return this.homeService.createHome(body, user.userId);
   }
@@ -46,7 +46,7 @@ export class HomeController {
   updateHome(
     @Param('id', ParseIntPipe) id: number,
     @Body() body: UpdateHomeDto,
-    @User() user: AuthorizedUserDto,
+    @User() user: UserDto,
   ): Promise<HomeResponseDto> {
     return this.homeService.updateHome(id, body, user);
   }
@@ -55,8 +55,8 @@ export class HomeController {
   @Delete(':id')
   deleteHome(
     @Param('id', ParseIntPipe) id: number,
-    @User() user: AuthorizedUserDto,
-  ) {
+    @User() user: UserDto,
+  ): Promise<void> {
     return this.homeService.deleteHome(id, user);
   }
 }
