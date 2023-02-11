@@ -11,7 +11,7 @@ import { UserType } from '@prisma/client';
 import * as jwt from 'jsonwebtoken';
 import { ParseEnumPipe } from '@nestjs/common/pipes';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
-import { User } from '../decorators.ts/user.decorator';
+import { User } from '../../decorators/user.decorator';
 
 @Controller('auth')
 export class AuthController {

@@ -10,7 +10,9 @@ import {
   Query,
 } from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common/pipes';
-import { User } from 'src/user/decorators.ts/user.decorator';
+import { UserType } from '@prisma/client';
+import { Roles } from 'src/decorators/roles.decorator';
+import { User } from 'src/decorators/user.decorator';
 import { UserDto } from 'src/user/dtos/auth.dto';
 import {
   CreateHomeDto,
@@ -34,6 +36,7 @@ export class HomeController {
     return this.homeService.getHomeById(id);
   }
 
+  @Roles(UserType.realtor)
   @Post()
   createHome(
     @Body() body: CreateHomeDto,
@@ -42,6 +45,7 @@ export class HomeController {
     return this.homeService.createHome(body, user.userId);
   }
 
+  @Roles(UserType.realtor, UserType.admin)
   @Put(':id')
   updateHome(
     @Param('id', ParseIntPipe) id: number,
@@ -51,6 +55,7 @@ export class HomeController {
     return this.homeService.updateHome(id, body, user);
   }
 
+  @Roles(UserType.realtor, UserType.admin)
   @HttpCode(204)
   @Delete(':id')
   deleteHome(
