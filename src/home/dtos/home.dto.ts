@@ -147,16 +147,34 @@ export class QueryDto {
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  minPrice?: number;
+  min_price?: number;
 
   @IsOptional()
   @IsNumber()
   @IsPositive()
-  maxPrice?: number;
+  max_price?: number;
 
   @IsOptional()
   @IsEnum(PropertyType, {
     message: 'propertyType should be residential or condo',
   })
-  propertyType?: PropertyType;
+  property_type?: PropertyType;
+}
+
+export class InquireDto {
+  @IsString()
+  @IsNotEmpty()
+  message: string;
+}
+
+export class MessageQueryDto {
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  page?: number;
+
+  @IsOptional()
+  @IsNumber()
+  @IsPositive()
+  per_page?: number;
 }

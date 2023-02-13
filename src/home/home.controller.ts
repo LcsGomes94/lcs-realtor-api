@@ -17,6 +17,8 @@ import { UserDto } from 'src/user/dtos/auth.dto';
 import {
   CreateHomeDto,
   HomeResponseDto,
+  InquireDto,
+  MessageQueryDto,
   QueryDto,
   UpdateHomeDto,
 } from './dtos/home.dto';
@@ -63,5 +65,30 @@ export class HomeController {
     @User() user: UserDto,
   ): Promise<void> {
     return this.homeService.deleteHome(id, user);
+  }
+
+  @Roles(UserType.buyer)
+  @Post(':id/inquire')
+  inquire(
+    @Param('id', ParseIntPipe) id: number,
+    @User() user: UserDto,
+    @Body() body: InquireDto,
+  ) {
+    return this.homeService.inquire(id, user, body.message);
+  }
+
+  @Roles(UserType.realtor, UserType.admin)
+  @Get(':id/messages')
+  getHomeMessages(
+    @Param('id', ParseIntPipe) id: number,
+    @User() user: UserDto,
+    @Query() query: MessageQueryDto,
+  ) {
+    return this.homeService.getHomeMessages(
+      id,
+      user,
+      query.page,
+      query.per_page,
+    );
   }
 }

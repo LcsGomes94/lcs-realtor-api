@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { CacheInterceptor, CacheModule, Module } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { UserModule } from './user/user.module';
@@ -9,12 +9,13 @@ import { UserInterceptor } from './interceptors/user.interceptor';
 import { AuthGuard } from './guards/auth.guard';
 
 @Module({
-  imports: [UserModule, PrismaModule, HomeModule],
+  imports: [UserModule, PrismaModule, HomeModule, CacheModule.register()],
   controllers: [AppController],
   providers: [
     AppService,
     { provide: APP_INTERCEPTOR, useClass: UserInterceptor },
     { provide: APP_GUARD, useClass: AuthGuard },
+    { provide: APP_INTERCEPTOR, useClass: CacheInterceptor },
   ],
 })
 export class AppModule {}

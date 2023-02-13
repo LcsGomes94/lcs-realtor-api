@@ -30,6 +30,23 @@ export class HomeService {
     }
   }
 
+  async getRealtorByHomeId(id: number) {
+    const home = await this.prismaClient.home.findUnique({
+      where: {
+        id,
+      },
+      select: {
+        realtor: true,
+      },
+    });
+
+    if (!home) {
+      throw new NotFoundException();
+    }
+
+    return home.realtor;
+  }
+
   async getAllHomes(queryFilter: QueryDto): Promise<HomeResponseDto[]> {
     enum Mode {
       default = 'default',
@@ -44,15 +61,15 @@ export class HomeService {
     };
 
     const price = {
-      ...(queryFilter.minPrice && { gte: queryFilter.minPrice }),
-      ...(queryFilter.maxPrice && { lte: queryFilter.maxPrice }),
+      ...(queryFilter.min_price && { gte: queryFilter.min_price }),
+      ...(queryFilter.max_price && { lte: queryFilter.max_price }),
     };
 
     const filter = {
       city,
       price,
-      ...(queryFilter.propertyType && {
-        property_type: queryFilter.propertyType,
+      ...(queryFilter.property_type && {
+        property_type: queryFilter.property_type,
       }),
     };
 
@@ -169,5 +186,72 @@ export class HomeService {
     });
 
     return;
+  }
+
+  async inquire(homeId: number, buyer: UserDto, message: string) {
+    const realtor = await this.getRealtorByHomeId(homeId);
+
+    return await this.prismaClient.message.create({
+      data: {
+        message,
+        home_id: homeId,
+        buyer_id: buyer.userId,
+        realtor_id: realtor.id,
+      },
+      select: {
+        message: true,
+        realtor: {
+          select: {
+            name: true,
+            phone: true,
+            email: true,
+          },
+        },
+      },
+    });
+  }
+
+  async getHomeMessages(
+    id: number,
+    user: UserDto,
+    page: number = 1,
+    perPage: number = 20,
+  ) {
+    await this.CheckAuthorization(id, user);
+
+    const [total, data] = await Promise.all([
+      this.prismaClient.message.count(),
+
+      this.prismaClient.message.findMany({
+        where: {
+          home_id: id,
+        },
+        select: {
+          message: true,
+          buyer: {
+            select: {
+              name: true,
+              phone: true,
+              email: true,
+            },
+          },
+        },
+        take: perPage,
+        skip: (page - 1) * perPage,
+      }),
+    ]);
+
+    const pagination = {
+      currentPage: page,
+      lastVisiblePage: Math.ceil(total / perPage),
+      hasNextPage: total > page * perPage,
+      items: {
+        count: data.length,
+        total,
+        perPage,
+      },
+    };
+
+    return { pagination, data };
   }
 }
