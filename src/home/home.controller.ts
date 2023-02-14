@@ -10,6 +10,7 @@ import {
   Query,
 } from '@nestjs/common';
 import { ParseIntPipe } from '@nestjs/common/pipes';
+import { Throttle } from '@nestjs/throttler';
 import { UserType } from '@prisma/client';
 import { Roles } from 'src/decorators/roles.decorator';
 import { User } from 'src/decorators/user.decorator';
@@ -33,11 +34,13 @@ export class HomeController {
     return this.homeService.getAllHomes(queryFilter);
   }
 
+  @Throttle(60)
   @Get(':id')
   getHomeById(@Param('id', ParseIntPipe) id: number): Promise<HomeResponseDto> {
     return this.homeService.getHomeById(id);
   }
 
+  @Throttle(10)
   @Roles(UserType.realtor)
   @Post()
   createHome(
@@ -77,6 +80,7 @@ export class HomeController {
     return this.homeService.inquire(id, user, body.message);
   }
 
+  @Throttle(60)
   @Roles(UserType.realtor, UserType.admin)
   @Get(':id/messages')
   getHomeMessages(

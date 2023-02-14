@@ -12,11 +12,13 @@ import * as jwt from 'jsonwebtoken';
 import { ParseEnumPipe } from '@nestjs/common/pipes';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { User } from '../../decorators/user.decorator';
+import { Throttle } from '@nestjs/throttler/dist/throttler.decorator';
 
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  @Throttle(10)
   @Post('signup/:userType')
   async signUp(
     @Body() body: SignUpDto,
@@ -44,11 +46,13 @@ export class AuthController {
     return this.authService.signUp(body, userType);
   }
 
+  @Throttle(10)
   @Post('signin')
   signIn(@Body() body: SignInDto) {
     return this.authService.signIn(body);
   }
 
+  @Throttle(10)
   @Post('key')
   generateProductKey(@Body() body: GenerateProductKeyDto) {
     return this.authService.generateProducKey(body);
