@@ -1,9 +1,10 @@
 import { Injectable, ConflictException, HttpException } from '@nestjs/common';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { GenerateProductKeyDto, SignInDto, SignUpDto } from '../dtos/auth.dto';
-import { UserType } from '@prisma/client';
+import { User, UserType } from '@prisma/client';
 import * as bcrypt from 'bcryptjs';
 import * as jwt from 'jsonwebtoken';
+import { CookieOptions, Response } from 'express';
 
 @Injectable()
 export class AuthService {
@@ -12,6 +13,7 @@ export class AuthService {
   async signUp(
     { name, email, password, phone }: SignUpDto,
     userType: UserType,
+    response: Response,
   ) {
     const userExists = await this.prismaService.user.findUnique({
       where: {
@@ -35,10 +37,10 @@ export class AuthService {
       },
     });
 
-    return this.generateSessionJwt(user.user_type, user.id);
+    return this.generateJwtResponse(user, response);
   }
 
-  async signIn({ email, password }: SignInDto) {
+  async signIn({ email, password }: SignInDto, response: Response) {
     const user = await this.prismaService.user.findUnique({
       where: {
         email,
@@ -55,7 +57,7 @@ export class AuthService {
       throw new HttpException('invalid credentials', 400);
     }
 
-    return this.generateSessionJwt(user.user_type, user.id);
+    return this.generateJwtResponse(user, response);
   }
 
   generateProducKey({ email: userEmail, userType }: GenerateProductKeyDto) {
@@ -86,5 +88,26 @@ export class AuthService {
         expiresIn: '7d',
       },
     );
+  }
+
+  private generateJwtResponse(user: User, response: Response) {
+    const jwt = this.generateSessionJwt(user.user_type, user.id);
+    const cookieOptions: CookieOptions = {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production',
+      maxAge: 1000 * 60 * 60 * 24 * 7,
+      sameSite: 'strict',
+      path: '/',
+    };
+
+    response.cookie('jwt', jwt, cookieOptions);
+
+    return {
+      userId: user.id,
+      userEmail: user.email,
+      userName: user.name,
+      userPhone: user.phone,
+      userType: user.user_type,
+    };
   }
 }

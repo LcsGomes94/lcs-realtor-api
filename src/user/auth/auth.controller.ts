@@ -1,5 +1,5 @@
 import { Body, Controller, Post, Get } from '@nestjs/common';
-import { Param } from '@nestjs/common/decorators';
+import { Param, Res } from '@nestjs/common/decorators';
 import {
   GenerateProductKeyDto,
   SignInDto,
@@ -13,6 +13,7 @@ import { ParseEnumPipe } from '@nestjs/common/pipes';
 import { UnauthorizedException } from '@nestjs/common/exceptions';
 import { User } from '../../decorators/user.decorator';
 import { Throttle } from '@nestjs/throttler/dist/throttler.decorator';
+import { Response, CookieOptions } from 'express';
 
 @Controller('auth')
 export class AuthController {
@@ -23,6 +24,7 @@ export class AuthController {
   async signUp(
     @Body() body: SignUpDto,
     @Param('userType', new ParseEnumPipe(UserType)) userType: UserType,
+    @Res({ passthrough: true }) response: Response,
   ) {
     if (userType !== UserType.buyer) {
       if (!body.productKey) {
@@ -43,13 +45,16 @@ export class AuthController {
       }
     }
 
-    return this.authService.signUp(body, userType);
+    return this.authService.signUp(body, userType, response);
   }
 
   @Throttle(10)
   @Post('signin')
-  signIn(@Body() body: SignInDto) {
-    return this.authService.signIn(body);
+  async signIn(
+    @Body() body: SignInDto,
+    @Res({ passthrough: true }) response: Response,
+  ) {
+    return this.authService.signIn(body, response);
   }
 
   @Throttle(10)
